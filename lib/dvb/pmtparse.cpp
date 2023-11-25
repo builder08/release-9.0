@@ -535,7 +535,8 @@ eDVBPMTParser::eStreamData::eStreamData(eDVBPMTParser::program &program)
 	adapterId = program.adapterId;
 	demuxId = program.demuxId;
 	serviceId = program.serviceId;
-        for (std::list<eDVBPMTParser::program::capid_pair>::const_iterator it(program.caids.begin()); it != program.caids.end(); ++it)	{
+        for (std::list<eDVBPMTParser::program::capid_pair>::const_iterator it(program.caids.begin()); it != program.caids.end(); ++it)	
+	{
 		caIds.push_back(it->caid);
 		ecmPids.push_back(it->capid);
 		ecmDataBytes.push_back(it->databytes);
