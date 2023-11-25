@@ -521,12 +521,12 @@ DEFINE_REF(eDVBPMTParser::eStreamData);
 
 eDVBPMTParser::eStreamData::eStreamData(eDVBPMTParser::program &program)
 {
-	for (const auto i : program.videoStreams)
-		videoStreams.push_back(i.pid);
-	for (const auto i : program.audioStreams)
-		audioStreams.push_back(i.pid);
-	for (const auto i : program.subtitleStreams)
-		subtitleStreams.push_back(i.pid);
+	for (std::vector<eDVBPMTParser::videoStream>::const_iterator i(program.videoStreams.begin()); i != program.videoStreams.end(); ++i)
+		videoStreams.push_back(i->pid);
+	for (std::vector<eDVBPMTParser::audioStream>::const_iterator i(program.audioStreams.begin()); i != program.audioStreams.end(); ++i)
+		audioStreams.push_back(i->pid);
+	for (std::vector<eDVBPMTParser::subtitleStream>::const_iterator i(program.subtitleStreams.begin()); i != program.subtitleStreams.end(); ++i)
+		subtitleStreams.push_back(i->pid);
 	pcrPid = program.pcrPid;
 	pmtPid = program.pmtPid;
 	textPid = program.textPid;
@@ -535,11 +535,10 @@ eDVBPMTParser::eStreamData::eStreamData(eDVBPMTParser::program &program)
 	adapterId = program.adapterId;
 	demuxId = program.demuxId;
 	serviceId = program.serviceId;
-	for (const auto it : program.caids)
-	{
-		caIds.push_back(it.caid);
-		ecmPids.push_back(it.capid);
-		ecmDataBytes.push_back(it.databytes);
+        for (std::list<eDVBPMTParser::program::capid_pair>::const_iterator it(program.caids.begin()); it != program.caids.end(); ++it)	{
+		caIds.push_back(it->caid);
+		ecmPids.push_back(it->capid);
+		ecmDataBytes.push_back(it->databytes);
 	}
 }
 
