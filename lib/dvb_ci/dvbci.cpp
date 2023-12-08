@@ -33,7 +33,7 @@ pthread_mutex_t eDVBCIInterfaces::m_pmt_handler_lock = PTHREAD_RECURSIVE_MUTEX_I
 pthread_mutex_t eDVBCIInterfaces::m_slot_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 eDVBCIInterfaces::eDVBCIInterfaces()
- : m_messagepump_thread(this,1, "dvbci"), m_messagepump_main(eApp,1, "dvbci"), m_runTimer(eTimer::create(this))
+ : m_messagepump_thread(this,1), m_messagepump_main(eApp,1), m_runTimer(eTimer::create(this))
 {
 	int num_ci = 0;
 	std::stringstream path;
@@ -789,10 +789,7 @@ void eDVBCIInterfaces::gotPMT(eDVBServicePMTHandler *pmthandler)
 		{
 			eTrace("[CI] check slot %d %d %d", tmp->getSlotID(), tmp->running_services.empty(), canDescrambleMultipleServices(tmp));
 			if (tmp->running_services.empty() || canDescrambleMultipleServices(tmp))
-			{
-				tmp->setCADemuxID(pmthandler);
 				tmp->sendCAPMT(pmthandler);
-			}
 			tmp = tmp->linked_next;
 		}
 	}
@@ -835,7 +832,7 @@ PyObject *eDVBCIInterfaces::getDescrambleRules(int slotid)
 	{
 		char tmp[255];
 		snprintf(tmp, 255, "eDVBCIInterfaces::getDescrambleRules try to get rules for CI Slot %d... but just %zd slots are available", slotid, m_slots.size());
-		PyErr_SetString(PyExc_ValueError, tmp);
+		PyErr_SetString(PyExc_Exception, tmp);
 		return 0;
 	}
 	ePyObject tuple = PyTuple_New(3);
@@ -888,14 +885,14 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 	{
 		char tmp[255];
 		snprintf(tmp, 255, "eDVBCIInterfaces::setDescrambleRules try to set rules for CI Slot %d... but just %zd slots are available", slotid, m_slots.size());
-		PyErr_SetString(PyExc_ValueError, tmp);
+		PyErr_SetString(PyExc_Exception, tmp);
 		return -1;
 	}
 	if (!PyTuple_Check(obj))
 	{
 		char tmp[255];
 		snprintf(tmp, 255, "2nd argument of setDescrambleRules is not a tuple.. it is a '%s'!!", PyObject_TypeStr(obj));
-		PyErr_SetString(PyExc_TypeError, tmp);
+		PyErr_SetString(PyExc_Exception, tmp);
 		return -1;
 	}
 	if (PyTuple_Size(obj) != 3)
@@ -904,7 +901,7 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 			"first argument should be a pythonlist with possible services\n"
 			"second argument should be a pythonlist with possible providers/dvbnamespace tuples\n"
 			"third argument should be a pythonlist with possible caids";
-		PyErr_SetString(PyExc_TypeError, errstr);
+		PyErr_SetString(PyExc_Exception, errstr);
 		return -1;
 	}
 	ePyObject service_list = PyTuple_GET_ITEM(obj, 0);
@@ -918,7 +915,7 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 			"second argument(%s) should be a pythonlist with possible providers (providername strings)\n"
 			"third argument(%s) should be a pythonlist with possible caids (ints)",
 			PyObject_TypeStr(service_list), PyObject_TypeStr(provider_list), PyObject_TypeStr(caid_list));
-		PyErr_SetString(PyExc_TypeError, errstr);
+		PyErr_SetString(PyExc_Exception, errstr);
 		return -1;
 	}
 	slot->possible_caids.clear();
@@ -933,7 +930,7 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules entry in service list is not a string.. it is '%s'!!", PyObject_TypeStr(refstr));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		const char *tmpstr = PyUnicode_AsUTF8(refstr);
@@ -952,28 +949,28 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules entry in provider list is not a tuple it is '%s'!!", PyObject_TypeStr(tuple));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		if (PyTuple_Size(tuple) != 2)
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules provider tuple has %zd instead of 2 entries!!", PyTuple_Size(tuple));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		if (!PyUnicode_Check(PyTuple_GET_ITEM(tuple, 0)))
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules 1st entry in provider tuple is not a string it is '%s'", PyObject_TypeStr(PyTuple_GET_ITEM(tuple, 0)));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		if (!PyLong_Check(PyTuple_GET_ITEM(tuple, 1)))
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules 2nd entry in provider tuple is not a long it is '%s'", PyObject_TypeStr(PyTuple_GET_ITEM(tuple, 1)));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		const char *tmpstr = PyUnicode_AsUTF8(PyTuple_GET_ITEM(tuple, 0));
@@ -992,7 +989,7 @@ RESULT eDVBCIInterfaces::setDescrambleRules(int slotid, SWIG_PYOBJECT(ePyObject)
 		{
 			char buf[255];
 			snprintf(buf, 255, "eDVBCIInterfaces::setDescrambleRules entry in caid list is not a long it is '%s'!!", PyObject_TypeStr(caid));
-			PyErr_SetString(PyExc_TypeError, buf);
+			PyErr_SetString(PyExc_Exception, buf);
 			return -1;
 		}
 		int tmpcaid = PyLong_AsLong(caid);
@@ -1012,7 +1009,7 @@ PyObject *eDVBCIInterfaces::readCICaIds(int slotid)
 	{
 		char tmp[255];
 		snprintf(tmp, 255, "eDVBCIInterfaces::readCICaIds try to get CAIds for CI Slot %d... but just %zd slots are available", slotid, m_slots.size());
-		PyErr_SetString(PyExc_ValueError, tmp);
+		PyErr_SetString(PyExc_Exception, tmp);
 	}
 	else
 	{
@@ -1038,7 +1035,7 @@ int eDVBCIInterfaces::setCIEnabled(int slotid, bool enabled)
 	return -1;
 }
 
-int eDVBCIInterfaces::setCIClockRate(int slotid, const std::string &rate)
+int eDVBCIInterfaces::setCIClockRate(int slotid, int rate)
 {
 	singleLock s(m_slot_lock);
 	eDVBCISlot *slot = getSlot(slotid);
@@ -1241,17 +1238,26 @@ void eDVBCISlot::data(int what)
 
 DEFINE_REF(eDVBCISlot);
 
-eDVBCISlot::eDVBCISlot(eMainloop *context, int nr)
+eDVBCISlot::eDVBCISlot(eMainloop *context, int nr):
+	startup_timeout(eTimer::create(context))
 {
 	char configStr[255];
 	slotid = nr;
-	m_ca_demux_id = -1;
 	m_context = context;
 	state = stateDisabled;
 	snprintf(configStr, 255, "config.ci.%d.enabled", slotid);
 	bool enabled = eConfigManager::getConfigBoolValue(configStr, true);
-	if (enabled)
-		openDevice();
+	int bootDelay = eConfigManager::getConfigIntValue("config.cimisc.bootDelay");
+	if (enabled) 
+	{
+		if (bootDelay) 
+		{
+			CONNECT(startup_timeout->timeout, eDVBCISlot::openDevice);
+			startup_timeout->start(1000 * bootDelay, true);
+		}
+		else
+			openDevice();
+	}
 	else
 		/* emit */ eDVBCI_UI::getInstance()->m_messagepump.send(eDVBCIInterfaces::Message(eDVBCIInterfaces::Message::slotStateChanged, getSlotID(), 3)); // state disabled
 }
@@ -1493,24 +1499,6 @@ int eDVBCISlot::cancelEnq()
 	return 0;
 }
 
-int eDVBCISlot::setCADemuxID(eDVBServicePMTHandler *pmthandler)
-{
-	ePtr<iDVBDemux> demux;
-	uint8_t dmx_id;
-
-	if (!pmthandler->getDataDemux(demux))
-	{
-		if (!demux->getCADemuxID(dmx_id))
-		{
-			m_ca_demux_id = dmx_id;
-			eDebug("[CI] Slot %d: CA demux_id = %d", getSlotID(), m_ca_demux_id);
-		}
-		else
-			m_ca_demux_id = -1;
-	}
-	return 0;
-}
-
 int eDVBCISlot::sendCAPMT(eDVBServicePMTHandler *pmthandler, const std::vector<uint16_t> &ids)
 {
 	if (!ca_manager)
@@ -1649,11 +1637,11 @@ int eDVBCISlot::setSource(const std::string &source)
 	return 0;
 }
 
-int eDVBCISlot::setClockRate(const std::string &rate)
+int eDVBCISlot::setClockRate(int rate)
 {
 	char buf[64];
 	snprintf(buf, sizeof(buf), "/proc/stb/tsmux/ci%d_tsclk", slotid);
-	if(CFile::writeStr(buf, rate) == -1)
+	if(CFile::write(buf, rate ? "high" : "normal") == -1)
 		return -1;
 	return 0;
 }
